@@ -1,0 +1,11 @@
+[project]
+name = "01-baixa-snapshots-qiskit"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "numpy>=2.4.0",
+    "qiskit>=2.2.3",
+    "qiskit-ibm-runtime>=0.44.0",
+]

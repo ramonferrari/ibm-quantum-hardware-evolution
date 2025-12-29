@@ -1,0 +1,11 @@
+# Ignorar arquivos do Mac
+.DS_Store
+
+# Ignorar ambiente virtual e caches do Python
+.venv/
+__pycache__/
+*.pyc
+build/
+dist/
+wheels/
+*.egg-info
