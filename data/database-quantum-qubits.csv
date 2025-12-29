@@ -1,0 +1,26 @@
+"Tecnologia","Ano (Roadmap)","Ano","Desenvolvedora","Rotulo","Qubit counts","Expectativa Qubit Counts","Quantum Volume","Quantum Volume","CLOPS"
+"Quantum Computing",2020,2019,"IBM","Falcon",27,"Executado",64,"Previsão"
+"Quantum Computing",2020,2020,"IBM","Hummingbird",65,"Executado",
+"Quantum Computing",2020,2021,"IBM","Eagle",127,"Previsão",
+"Quantum Computing",2020,2022,"IBM","Osprey",433,"Previsão"
+"Quantum Computing",2020,2023,"IBM","Condor",1121,"Previsão",
+
+"Quantum Computing",2022,2019,"IBM","Falcon",27,"Executado",32,"Executado",200
+"Quantum Computing",2022,2020,"IBM","Hummingbird",65,"Executado",128,"Executado",
+"Quantum Computing",2022,2021,"IBM","Eagle",127,"Executado",256,"Previsão",1400
+"Quantum Computing",2022,2022,"IBM","Osprey",433,"Executado",
+"Quantum Computing",2022,2023,"IBM","Condor",1121,"Previsão",
+"Quantum Computing",2022,2023,"IBM","Heron",133,"Previsão",
+"Quantum Computing",2022,2024,"IBM","Flamingo (3x)",1386,"Previsão",
+"Quantum Computing",2022,2025,"IBM","Kookaburra (3x)",4158,"Previsão",
+
+"Quantum Computing",2025,2019,"IBM","Falcon",27,"Executado",64
+"Quantum Computing",2025,2020,"IBM","Hummingbird",65,"Executado",
+"Quantum Computing",2025,2021,"IBM","Eagle",127,"Executado",
+"Quantum Computing",2025,2022,"IBM","Osprey",433,"Executado",
+"Quantum Computing",2025,2023,"IBM","Condor",1121,"Executado",
+"Quantum Computing",2025,2023,"IBM","Heron",133,"Executado",
+"Quantum Computing",2025,2025,"IBM","Nighthawk (5K)",120,"Executado",
+"Quantum Computing",2025,2026,"IBM","Nighthawk (7.5K)",360,"Previsão",
+"Quantum Computing",2025,2027,"IBM","Nighthawk (10K)",1080,"Previsão",
+"Quantum Computing",2025,2029,"IBM","Starling",200,"Previsão",

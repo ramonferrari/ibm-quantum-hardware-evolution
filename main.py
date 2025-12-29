@@ -55,7 +55,8 @@ def main():
 
     ## Salvando em CSV
     # Nome do arquivo onde salvaremos os dados brutos para análise estatística posterior
-    filename = "database-quantum-qiskit_ibm.csv"
+    filename = os.path.join("data","database-quantum-qiskit_ibm.csv")
+    os.makedirs("data", exist_ok=True)
     
     # Cabeçalho do CSV definindo as métricas críticas de qualidade de hardware:
         # Era: A geração tecnológica (ex: Falcon)
