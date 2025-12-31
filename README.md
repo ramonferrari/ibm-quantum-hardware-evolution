@@ -1,5 +1,6 @@
 # IBM Quantum Hardware Evolution Analysis (2020–2024)
-# Análise da Evolução do Hardware Quântico IBM (2020–2024)
+*[PT-BR]*
+Análise da Evolução do Hardware Quântico IBM (2020–2024)
 
 [EN]
 This repository contains the data extraction engine used in the article  
@@ -18,7 +19,8 @@ para quantificar o progresso da engenharia quântica.
 ---
 
 ## ⚛️ What This Code Does (Scientific Perspective)
-## ⚛️ O Que Este Código Faz (Visão Científica)
+*[PT-BR]*
+ ⚛️ O Que Este Código Faz (Visão Científica)
 
 [EN]
 Unlike benchmarks that measure only software-level performance, this script accesses
@@ -50,7 +52,8 @@ a **camada física** dos processadores para extrair três métricas críticas qu
 ---
 
 ## 🧬 Analyzed Technological Eras
-## 🧬 As Eras Analisadas
+*[PT-BR]*
+🧬 As Eras Analisadas
 
 [EN]
 The code groups processors into four distinct technological generations to support
@@ -81,7 +84,8 @@ recuperou com a maturidade do processo de fabricação:
 ---
 
 ## 🛠️ Technical Methodology
-## 🛠️ Metodologia Técnica
+*[PT-BR]*
+🛠️ Metodologia Técnica
 
 [EN]
 The script uses the `qiskit-ibm-runtime` library to load **Fake Backends**. These objects
@@ -107,7 +111,8 @@ contendo dados reais de calibração dos chips em datas específicas.
 ---
 
 ## 🚀 How to Reproduce
-## 🚀 Como Reproduzir
+*[PT-BR]*
+🚀 Como Reproduzir
 
 [EN]
 1. Install dependencies (using `uv` or `pip` is recommended):
