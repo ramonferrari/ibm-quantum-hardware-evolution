@@ -59,77 +59,92 @@ import csv
 import os
 import numpy as np
 
-# Importamos a biblioteca de simulação que contém os digital twins dos chips reais
+# [EN] Import the simulation library containing digital twins of real IBM quantum chips
+# [PT-BR] Importamos a biblioteca de simulação que contém os digital twins dos chips reais
 from qiskit_ibm_runtime.fake_provider import (
-    FakeHanoiV2, FakeCairoV2, FakeKolkataV2,    # Geração Falcon (Baixa densidade, alta estabilidade inicial)
-    FakeWashingtonV2,                           # Geração Eagle R1 (O "salto" de escala que custou qualidade)
-    FakeSherbrooke, FakeBrisbane, FakeKyoto, FakeOsaka, # Geração Eagle R3 (Processo de fabricação amadurecido)
-    FakeTorino, FakeFez, FakeMarrakesh          # Geração Heron (Nova arquitetura com acopladores ajustáveis)
+    FakeHanoiV2, FakeCairoV2, FakeKolkataV2,    # Falcon generation (low density, high initial stability)
+    FakeWashingtonV2,                           # Eagle R1 generation (the scaling “leap” that came at a quality cost)
+    FakeSherbrooke, FakeBrisbane, FakeKyoto, FakeOsaka, # Eagle R3 generation (mature fabrication process)
+    FakeTorino, FakeFez, FakeMarrakesh          # Heron generation (new architecture with tunable couplers)
 )
 
 def main():
+    print("[EN]")
     print("Iniciando extração de dados históricos (T1, T2, Readout)...")
     print("Carregando backends (isso pode levar alguns segundos)...")
+    print("[PT-BR]")
+    print("Starting historical data extraction (T1, T2, Readout)...")
+    print("Loading backends (this may take a few seconds)...")
+
+    # Dictionary of historical processors
+    # Define the scope of the population-level study: group chips by “Technological Era” to demonstrate systemic hardware evolution rather than isolated improvements
 
     # Dicionário de Processadores Históricos
     # Definimos o escopo do Estudo Populacional: agrupar chips por "Era Tecnológica" para provar a evolução sistêmica
+
     backends_by_era = {
-        "Falcon (2020/21)": [FakeHanoiV2(), FakeCairoV2(), FakeKolkataV2()],        # Substituto do Montreal (27 Qubits)
-        "Eagle R1 (2022)": [FakeWashingtonV2()], # Primeiro Eagle (127 Qubits) # O único R1 puro público
-        "Eagle R3 (2023)":[FakeSherbrooke(), FakeBrisbane(), FakeKyoto(), FakeOsaka()],   # Eagle Maduro (127 Qubits)
-        "Heron (2024)": [FakeTorino(),FakeFez(),FakeMarrakesh()] # O estado da arte  # Heron (133 Qubits)
+        "Falcon (2020/21)": [FakeHanoiV2(), FakeCairoV2(), FakeKolkataV2()],        # Proxy for Montreal (27 qubits)
+        "Eagle R1 (2022)": [FakeWashingtonV2()], # First Eagle generation (127 qubits); only publicly available pure R1
+        "Eagle R3 (2023)":[FakeSherbrooke(), FakeBrisbane(), FakeKyoto(), FakeOsaka()],   # Mature Eagle (127 qubits)
+        "Heron (2024)": [FakeTorino(),FakeFez(),FakeMarrakesh()]  # State of the art; Heron (133 qubits)
     }
 
-    ## Salvando em CSV
+    # [EN] Save results to CSV
+    # File name used to store raw qubit-level data for subsequent statistical analysis
+    # [PT-BR] Salvando resultados em CSV
     # Nome do arquivo onde salvaremos os dados brutos para análise estatística posterior
     filename = os.path.join("data","database-quantum-qiskit_ibm.csv")
     os.makedirs("data", exist_ok=True)
     
-    # Cabeçalho do CSV definindo as métricas críticas de qualidade de hardware:
-        # Era: A geração tecnológica (ex: Falcon)
-        # Chip: O nome do processador (ex: Hanoi)
-        # Qubit_Index: O número do qubit no chip (0, 1, 2..., N)
-        # T1_us: Relaxamento térmico - Tempo de coerência T1 em microsegundos
-        # T2_us: Defasagem - Tempo de coerência T2 em microsegundos
-        # Readout_Error_Pct: Fidelidade de Medida - Erro de leitura em porcentagem
+    # CSV header defining the critical hardware quality metrics:
+    # Era: Technological generation (e.g., Falcon)
+    # Chip: Processor name (e.g., Hanoi)
+    # Qubit_Index: Qubit index on the chip (0, 1, 2, ..., N)
+    # T1_us: Thermal relaxation — T1 coherence time in microseconds
+    # T2_us: Dephasing — T2 coherence time in microseconds
+    # Readout_Error_Pct: Measurement fidelity — readout error expressed as a percentage
     header = ["Era", "Chip", "Qubit_Index", "T1_us", "T2_us", "Readout_Error_Pct"]
     
+    # In-memory list to accumulate data before writing to disk
     # Lista em memória para acumular os dados antes de escrever no disco 
     all_data_rows = []
 
-    # Configuração visual da tabela no console (feedback imediato para o pesquisador)
-    print(f"\n{'Geração / Chip':<30} | {'Qubits':^6} | {'T1 Med':>10} | {'T2 Med':>10} | {'T2/T1':^7} | {'Erro Leitura':>12}")
+    # Console table formatting (immediate feedback for the researcher)
+    print(f"\n{'Geração / Chip':<30} | {'Qubits':^6} | {'T1 Med':>10} | {'T2 Med':>10} | {'T2/T1':^7} | {'Readout_Error_Pct':>12}")
     print("=" * 95)
 
-    # Loop 1 (Principal): Iteração sobre as Eras Tecnológicas para traçar a evolução temporal
+    # Main loop (1): iterate over technological eras to trace temporal hardware evolution
     for era_name, chip_list in backends_by_era.items():
         print(f"{era_name}")
         
-        # Variáveis para calcular a média global da GERAÇÃO (Estatística Populacional Agregada)
+        # Variables used to compute generation-level global means (aggregated population statistics)
         era_t1_values = []
         era_t2_values = []
 
-        # Loop 2: Iteração sobre cada processador físico disponível na amostra
+        # Loop 2: Iterate over each physical processor available in the sample
         for backend in chip_list:
-            # Normalizamos o nome do chip para remover prefixos de biblioteca ("fake_sherbrooke" -> "Sherbrooke")
-            # Usamos a classe do objeto para garantir o nome correto mesmo em versões diferentes do Qiskit
+            #  Normalize the chip name to remove library prefixes
+            # (e.g., "fake_sherbrooke" → "Sherbrooke")
+            # The class name is used to ensure correctness across different Qiskit versions
             raw_name = backend.__class__.__name__
             chip_name = raw_name.replace("Fake", "").replace("V2", "")
             
-            # Acessamos o "Target": a representação física do chip contendo propriedades calibradas
+            # Access the "Target": the physical representation of the chip containing
+            # calibrated hardware properties
             target = backend.target
             num_qubits = target.num_qubits
             
-            # Listas temporárias para estatística do chip individual
+            # Temporary lists for per-chip statistical aggregation
             chip_t1 = []
             chip_t2 = []
             chip_ro = []
 
-            # Loop 3: Iteração sobre cada Qubit Físico (o "ponto de dado" fundamental)
+            # Loop 3: Iterate over each physical qubit
+            # (the fundamental data point of the analysis)
             for i in range(num_qubits):
                 try:
-                    # 1. Tenta pegar as propriedades do qubit i
-                    # Se falhar aqui, o qubit não existe, então pulamos (continue)
+                    # 1. Attempt to access the properties of qubit i
+                    # If this fails, the qubit does not exist and is skipped (continue)
                     props = target.qubit_properties[i]
                     if not props: continue 
                     
@@ -137,24 +152,24 @@ def main():
                     t2_val = None
                     ro_val = None
 
-                    # 2. Extração de T1 (Fundamental)
+                    # 2. Extract T1 (fundamental)
                     if props.t1 is not None:
                         t1_val = props.t1 * 1e6
                         chip_t1.append(t1_val)
                         era_t1_values.append(t1_val)
 
-                    # 3. Extração de T2 (Fundamental)
+                    # 3. Extract T2 (fundamental)
                     if props.t2 is not None:
                         t2_val = props.t2 * 1e6
                         chip_t2.append(t2_val)
                         era_t2_values.append(t2_val)
-
-                    # 4. Extração de Readout (BLOCO CORRIGIDO)
-                    # Tentativa A: Padrão V2 (Propriedade direta)
+                    
+                    # 4. Extract readout error 
+                    # Attempt A: V2 standard (direct property access)
                     if hasattr(props, 'readout_error') and props.readout_error is not None:
                         ro_val = props.readout_error * 100
                     
-                    # Tentativa B: Padrão V2 (Dentro da instrução 'measure')
+                    # Attempt B: V2 standard (embedded within the 'measure' instruction)
                     if ro_val is None:
                         try:
                             measure_op = target.operation_from_name('measure')
@@ -164,8 +179,9 @@ def main():
                                     ro_val = op_props.error * 100
                         except: pass
 
-                    # Tentativa C: Padrão V1 (Legacy) - ISSO VAI SALVAR SEUS DADOS!
-                    # Muitos FakeBackends V2 ainda têm o banco de dados antigo escondido aqui.
+                    # Attempt C: Legacy V1 pattern — THIS WILL SAVE YOUR DATA!
+                    # Many V2 FakeBackends still retain the legacy calibration database here.
+
                     if ro_val is None:
                         try:
                             # Tenta acessar a API antiga direto no backend
@@ -178,7 +194,7 @@ def main():
                     if ro_val is not None:
                         chip_ro.append(ro_val)
 
-                    # 5. Salva no Dataset se tiver T1 (mesmo sem RO)
+                    # 5. Save to the dataset if T1 is available (even if readout data is missing)
                     if t1_val is not None:
                         row = [
                             era_name, 
@@ -191,42 +207,49 @@ def main():
                         all_data_rows.append(row)
 
                 except Exception:
-                    continue # Pula apenas este qubit se algo muito grave acontecer
+                    continue  # Skip only this qubit if a critical failure occurs
 
             # --- ESTATÍSTICA DO CHIP ---
-            if chip_t1: # Se achou pelo menos 1 qubit vivo
+            if chip_t1: # If at least one operational (alive) qubit was found
                 med_t1 = np.median(chip_t1)
                 med_t2 = np.median(chip_t2) if chip_t2 else 0
                 
-                # Razão T2/T1
+                # Ratio T2/T1
                 ratio = med_t2 / med_t1 if med_t1 > 0 else 0
                 
                 # Readout String
                 if chip_ro:
                     ro_str = f"{np.median(chip_ro):.2f}%"
                 else:
-                    ro_str = "N/A" # Agora aparece N/A, mas mostra T1/T2!
+                    ro_str = "N/A" # N/A may appear here, but T1/T2 values are still reported
 
                 print(f"  ├─ {chip_name:<20} | {len(chip_t1):^6} | {med_t1:>7.1f} µs | {med_t2:>7.1f} µs | {ratio:^7.2f} | {ro_str:>12}")
             else:
-                print(f"  ├─ {chip_name:<20} | Dados insuficientes (Lista vazia)")
+                print(f"  ├─ {chip_name:<20} | Insufficient data (empty list)")
 
-        # Exibição da "Média da Geração" (Estatística Populacional)
-        # Isso indica se a melhoria é sistêmica da arquitetura ou sorte de um chip específico
+        # Display of the “Generation Mean” (population-level statistics)
+        # Indicates whether improvements are systemic to the architecture
+        # or merely due to a single exceptionally good chip
         if era_t1_values:
             grand_t1 = np.median(era_t1_values)
             grand_t2 = np.median(era_t2_values)
             grand_ratio = grand_t2 / grand_t1
-            print(f"  ➤ MÉDIA DA GERAÇÃO ({len(era_t1_values)} pts)| {'---':^6} | {grand_t1:>7.1f} µs | {grand_t2:>7.1f} µs | {grand_ratio:^7.2f} | {'---':>12}")
+            print(f"  ➤ GENERATION MEAN ({len(era_t1_values)} pts)| {'---':^6} | {grand_t1:>7.1f} µs | {grand_t2:>7.1f} µs | {grand_ratio:^7.2f} | {'---':>12}")
         
         print("-" * 95)
 
-    # Loop final de escrita no cisco (I/O)
+    # Final write loop to disk (I/O)
     with open(filename, mode='w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
         writer.writerow(header)
         writer.writerows(all_data_rows)
     
+
+
+    print("[EN]")
+    print(f"\n[SUCCESS] Dataset saved to: {os.path.abspath(filename)}")
+    print(f"Total number of qubits processed: {len(all_data_rows)}")
+    print("[PT-BR]")
     print(f"\n[SUCESSO] Dataset salvo em: {os.path.abspath(filename)}")
     print(f"Total de Qubits processados: {len(all_data_rows)}")
 
