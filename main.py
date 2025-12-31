@@ -1,17 +1,39 @@
 """
-EXTRAÇÃO DE DADOS HISTÓRICOS DE HARDWARE QUÂNTICO (IBM QUANTUM)
+HISTORICAL QUANTUM HARDWARE DATA EXTRACTION (IBM QUANTUM)
+[PT-BR] EXTRAÇÃO DE DADOS HISTÓRICOS DE HARDWARE QUÂNTICO (IBM QUANTUM)
 ------------------------------------------------------------------
 Ramon Moreno Ferrari
-Contexto: Artigo "a definir"
-Data: December 2025
 
-DESCRIÇÃO:
+Context: Article "to be defined" (CACM?)
+Date: December 2025
+
+## DESCRIPTION:
+[EN]
+This script performs data mining on archived IBM quantum processor
+“Digital Twins” available in the Qiskit library.
+The objective is to reconstruct the hardware fidelity timeline
+in order to validate the transition from the “Qubit Scaling” era
+to the “Quality Scaling” era.
+
+[PT-BR]
 Este script realiza uma mineração de dados em "Gêmeos Digitais" (Digital Twins)
 de processadores quânticos da IBM arquivados na biblioteca Qiskit.
 O objetivo é reconstruir a linha do tempo da fidelidade do hardware
 para validar a transição da era de "Escala de Qubits" para "Escala de Qualidade".
 
-METODOLOGIA:
+## METHODOLOGY:
+[EN]
+1. Population-Level Study: Instead of analyzing individual chips in isolation,
+   processors are grouped into “Technological Eras”
+   (Falcon, Eagle R1, Eagle R3, Heron).
+2. Raw Data: Calibration metrics are extracted from ALL available physical qubits
+   in the snapshots (N > 1000 data points), without outlier removal,
+   in order to capture the true variability of the manufacturing process (yield).
+3. Extracted Physical Metrics:
+   - T1 (Longitudinal Relaxation): Qubit energy lifetime.
+   - T2 (Transversal Relaxation): Phase coherence lifetime (quantum memory).
+   - Readout Error: Final state measurement fidelity.
+[PT-BR]
 1. Estudo Populacional: Em vez de analisar chips isolados, agrupamos os
    processadores em "Eras Tecnológicas" (Falcon, Eagle R1, Eagle R3, Heron).
 2. Dados Brutos: Extraímos as métricas de calibração de TODOS os qubits físicos
@@ -22,10 +44,15 @@ METODOLOGIA:
    - T2 (Relaxamento Transversal): Tempo de vida da coerência de fase (memória quântica).
    - Readout Error: Fidelidade da medição do estado final.
 
-SAÍDA:
+## OUTPUT:
+[EN]
+- Console: Statistical table with per-chip medians and generation-level aggregated means.
+- CSV: File 'quantum_hardware_data.csv' containing qubit-level granular data
+  for distribution plotting.
+[PT-BR]
 - Console: Tabela estatística com medianas por chip e média agregada por geração.
 - CSV: Arquivo 'quantum_hardware_data.csv' contendo dados granulares por qubit
-  para plotagem de distribuições (Violin/Box Plots).
+  para plotagem de distribuições.
 """
 
 import csv
