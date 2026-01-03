@@ -184,7 +184,7 @@ def plot_roadmap_evolution(df, df_reg_lines, _ignored_labels):
         # --- LAYER 4: TEXT LABELS ---
         + geom_text(data=df,
                     mapping=aes(x='Year', y='Qubits', label='Label_Full'), 
-                    nudge_y=0.25, size=7, color="#34495e", lineheight=0.9)
+                    nudge_y=0.25, size=9, color="#34495e", lineheight=0.9)
         
         # --- SCALES ---
         + facet_wrap('~Roadmap_Year', ncol=3, scales='free_x')
@@ -196,7 +196,24 @@ def plot_roadmap_evolution(df, df_reg_lines, _ignored_labels):
             name="Physical Qubits (Log Scale)"
         )
         
-        + scale_x_continuous(breaks=lambda limits: range(int(limits[0]), int(limits[1]) + 1), name="Year")
+        # --- SOLUÇÃO DE "ALMOFADA ASSIMÉTRICA" (Só na direita) ---
+        + scale_x_continuous(
+            # 1. Breaks: Garante que os números no eixo sejam anos inteiros
+            # O 'int(limits[1]) + 1' garante que o último ano seja desenhado
+            breaks=lambda limits: range(int(limits[0]), int(limits[1]) + 1),
+            
+            name="Year",
+            
+            # 2. Limits com Lógica Personalizada (A Mágica):
+            # Em vez de números fixos, usamos uma função lambda 'l'.
+            # l[0] é o ano mínimo dos dados daquele painel.
+            # l[1] é o ano máximo dos dados daquele painel.
+            # Retornamos (l[0], l[1] + 1.5) -> Começa igual, termina 1.5 anos depois.
+            limits=lambda l: (l[0] - 0.9, l[1] + 0.9),
+            
+            # 3. Zeramos o expand padrão para respeitar estritamente o cálculo acima
+            expand=(0, 0)
+        )
         
         # --- MUDANÇA AQUI: CORES MANUAIS ---
         + scale_color_manual(values=my_colors, name="Doubling Trends")
@@ -248,6 +265,15 @@ def plot_standalone_2022(df, df_reg_lines):
     
     my_single_color = ["#e74c3c"] # <--- TROQUE ESSE CÓDIGO PELA COR DESEJADA
 
+    # 2. CÁLCULO DE LIMITE SEGURO (Para evitar sobreposição)
+    # Pegamos o menor ano (2019) e o maior ano (2025)
+    # Adicionamos +1.5 ao final para criar uma "almofada" de espaço para o texto
+    min_year = int(df_2022['Year'].min())
+    max_year = int(df_2022['Year'].max())
+    
+    limit_min = min_year - 0.5
+    limit_max = max_year + 0.5
+
     chart = (
         ggplot()
         + geom_line(data=reg_2022, 
@@ -260,7 +286,7 @@ def plot_standalone_2022(df, df_reg_lines):
         
         + geom_text(data=df_2022,
                     mapping=aes(x='Year', y='Qubits', label='Label_Full'), 
-                    nudge_y=0.25, size=7, color="#34495e", lineheight=0.9)
+                    nudge_y=0.25, size=9, color="#34495e", lineheight=0.9)
         
         + scale_y_continuous(
             trans='log2', 
@@ -269,7 +295,13 @@ def plot_standalone_2022(df, df_reg_lines):
             name="Physical Qubits (Log Scale)"
         )
         
-        + scale_x_continuous(breaks=lambda limits: range(int(limits[0]), int(limits[1]) + 1), name="Year")
+        + scale_x_continuous(
+            # Definimos os limites explicitamente usando as variáveis calculadas acima.
+            # O gráfico vai desenhar a grade até 2026.5, acomodando o texto.
+            limits=[limit_min, limit_max],
+            breaks=range(min_year, max_year + 2), 
+            name="Year"
+        )
         
         # Aqui ele aplica a cor que você definiu acima
         + scale_color_manual(values=my_single_color, name="Doubling Trend")
@@ -286,7 +318,12 @@ def plot_standalone_2022(df, df_reg_lines):
             legend_title=element_text(weight='bold'),
 
             # 1. Título Principal (Aumentei para 22 e deixei negrito)
-            plot_title=element_text(size=18, weight='bold', ha='left'),
+            # --- TÍTULO PRINCIPAL ---
+            plot_title=element_text(size=18, weight='bold', ha='center'),
+            
+            # --- SUBTÍTULO (NOVO) ---
+            # Um pouco menor (size=14) e normal (sem negrito), centralizado
+            plot_subtitle=element_text(size=14, ha='center', margin={'b': 15}),
             
             # 2. Títulos dos Eixos ("Year", "Qubits") (Aumentei para 16)
             axis_title=element_text(size=16),
@@ -294,7 +331,10 @@ def plot_standalone_2022(df, df_reg_lines):
             # 3. Textos dos Eixos (Os números/anos) (Aumentei para 12)
             axis_text_y=element_text(size=12)
         )
-        + labs(title="IBM Quantum Roadmap: The 2022 Perspective on Qubit Scaling")
+        + labs(
+            title="Quantum Supply Scaling",
+            subtitle="Projected Qubit Counts in the 2022 Perspective (IBM Quantum Roadmap)"
+        )
     )
     
     return chart
