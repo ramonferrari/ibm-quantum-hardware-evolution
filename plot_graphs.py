@@ -207,16 +207,22 @@ def plot_roadmap_evolution(df, df_reg_lines, _ignored_labels):
         + theme(
             figure_size=(16, 7),
             #text=element_text(family="sans-serif"),
-            axis_text_x=element_text(rotation=45, hjust=1, size=9),
+            axis_text_x=element_text(rotation=45, hjust=1, size=12),
             strip_background=element_rect(fill="#f0f2f5"), 
             strip_text=element_text(weight='bold', size=11),
             panel_grid_minor=element_blank(),
             legend_position="right", # Legenda na direita
             legend_key=element_blank(),
             legend_title=element_text(weight='bold'),
-            text=element_text(family="Open Sans Semicondensed")
+            text=element_text(family="Open Sans Semicondensed"),
+            # 1. Título Principal (Aumentei para 22 e deixei negrito)
+            plot_title=element_text(size=18, weight='bold'),
+            # 2. Títulos dos Eixos ("Year", "Qubits") (Aumentei para 16)
+            axis_title=element_text(size=16),
+            # 3. Textos dos Eixos (Os números/anos) (Aumentei para 12)
+            axis_text_y=element_text(size=12)
         )
-        + labs(title="Strategic Trajectory: Hardware Roadmap Evolution")
+        + labs(title="Quantum Supply Scaling: The Trajectory of Qubit Volume (IBM Roadmaps)")
     )
     
     return chart
@@ -272,14 +278,23 @@ def plot_standalone_2022(df, df_reg_lines):
         
         + theme_bw()
         + theme(
-            figure_size=(10, 7),
+            figure_size=(16, 7),
             text=element_text(family="Open Sans Semicondensed"),
-            axis_text_x=element_text(rotation=45, hjust=1, size=10),
+            axis_text_x=element_text(rotation=45, hjust=1, size=12),
             panel_grid_minor=element_blank(),
             legend_position="right", 
-            legend_title=element_text(weight='bold')
+            legend_title=element_text(weight='bold'),
+
+            # 1. Título Principal (Aumentei para 22 e deixei negrito)
+            plot_title=element_text(size=18, weight='bold', ha='left'),
+            
+            # 2. Títulos dos Eixos ("Year", "Qubits") (Aumentei para 16)
+            axis_title=element_text(size=16),
+            
+            # 3. Textos dos Eixos (Os números/anos) (Aumentei para 12)
+            axis_text_y=element_text(size=12)
         )
-        + labs(title="IBM Quantum Roadmap: The 2022 Perspective")
+        + labs(title="IBM Quantum Roadmap: The 2022 Perspective on Qubit Scaling")
     )
     
     return chart
@@ -306,7 +321,7 @@ if __name__ == "__main__":
         file_2022_png = os.path.join(FIGURES_PATH, "roadmap_2022_detail.png")
         file_2022_pdf = os.path.join(FIGURES_PATH, "roadmap_2022_detail.pdf")
         
-        plot_2022.save(file_2022_png, width=8, height=7, dpi=300)
-        plot_2022.save(file_2022_pdf, width=8, height=7)
+        plot_2022.save(file_2022_png, width=10, height=7, dpi=300)
+        plot_2022.save(file_2022_pdf, width=10, height=7)
         
         print(f"Done! Saved:\n - {file_2022_png}")
