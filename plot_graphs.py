@@ -20,15 +20,21 @@ foco de pura escala para qualidade/utilidade.
 
 """
 
+
+## Library Import and Environment Setup
+## [PT-BR] Importação de Bibliotecas e Configuração do Ambiente
 import pandas as pd
 import numpy as np
 from plotnine import *
 import os
 
-# --- CONFIGURATION / CONFIGURAÇÃO ---
+# --- CONFIGURATION
+# --- CONFIGURAÇÃO 
+# using os.path.join ensures compatibility across Windows/Linux/Mac
 DATA_PATH = os.path.join("data", "database-quantum-qubits.csv")
 FIGURES_PATH = os.path.join("figures")
 
+# ensure the output directory exists to prevent IOErrors later
 os.makedirs(FIGURES_PATH, exist_ok=True)
 
 def load_and_clean_data():
@@ -36,21 +42,27 @@ def load_and_clean_data():
     [EN] Loads raw CSV data, cleans numeric columns (handling 'K' or ','), and types columns.
     [PT-BR] Carrega dados CSV, limpa colunas numéricas (tratando 'K' ou ',') e tipa colunas.
     """
+    ## File Existence Check and Loading
+    ## [PT-BR] Verificação de Existência de Arquivo e Carregamento
     if not os.path.exists(DATA_PATH):
         print(f"[WARNING] File {DATA_PATH} not found.")
         return None
     else:
         df = pd.read_csv(DATA_PATH)
 
+    # renaming columns early simplifies downstream access (dot notation compatible)
     df = df.rename(columns={
         "Year (Roadmap)": "Roadmap_Year",
         "Qubit counts": "Qubits",
         "Expected Qubit Counts": "Status"
     })
     
-    # --- DATA CLEANING / LIMPEZA DE DADOS ---
-    # [EN] Critical step: Convert "7.5K" or "10,000" strings to floats.
+    ## Data Sanitization (String to Float Conversion)
+    ## [PT-BR] Higienização de Dados (Conversão de String para Float)
+
+    # Critical step: Convert "7.5K" or "10,000" strings to floats.
     # [PT-BR] Passo crítico: Converter strings "7.5K" ou "10,000" para floats.
+
     if df['Qubits'].dtype == object:
         # Remove commas (e.g., "10,000" -> "10000")
         df['Qubits'] = df['Qubits'].astype(str).str.replace(',', '')
@@ -64,12 +76,16 @@ def load_and_clean_data():
             .astype(str).str.replace('K', '', case=False)\
             .astype(float) * 1000
     
-    # Force conversion to numeric
+    ## Final Type Enforcement and Validation
+    ## [PT-BR] Aplicação Final de Tipos e Validação
+    # Force conversion to numeric, turning unparseable data into NaN
+
     df['Qubits'] = pd.to_numeric(df['Qubits'], errors='coerce')
     
-    # Drop invalid rows
+    # Drop invalid rows (essential for log scale plotting later)
     df = df.dropna(subset=['Qubits'])
 
+    # Drop invalid rows (essential for log scale plotting later)
     df["Roadmap_Year"] = df["Roadmap_Year"].astype(str)
     
     return df
@@ -87,15 +103,21 @@ def calculate_regression_data(df):
     # No longer need separate label dataframe, as the label is part of the line data now
     # [PT-BR] Não precisamos mais de dataframe de rótulo separado, pois o rótulo faz parte dos dados da linha agora
 
+
+    ## Helper Function for Curve Fitting
+    ## [PT-BR] Função Auxiliar para Ajuste de Curvas
     def process_fit(sub_df, roadmap_year, group_id, trend_name_short):
+        # ensure we have enough points to fit a line
         if len(sub_df) < 2: return
         
-        # Fit logic
+        # Fit logic: Log-Linear Regression (Moore's Law style)
+        # We fit Y = log2(Qubits) vs X = Year to find the doubling rate
+        
         x = sub_df['Year'].values
         y = np.log2(sub_df['Qubits'].values)
         slope, intercept = np.polyfit(x, y, 1)
         
-        # Generate Line
+        # Generate Line points for plotting (start and end only)
         x_range = np.array([x.min(), x.max()])
         y_pred = 2**(slope * x_range + intercept)
         
@@ -119,20 +141,29 @@ def calculate_regression_data(df):
 
     print("\n[DEBUG] Starting Regression Calculations...")
 
-    # --- SCENARIO 1: Roadmap 2020 ---
+    ## Scenario 1: 2020 Roadmap (Baseline)
+    ## [PT-BR] Cenário 1: Roadmap 2020 (Linha de Base)
     process_fit(df[df['Roadmap_Year'] == '2020'], '2020', 'Main', '2020 Roadmap')
 
-    # --- SCENARIO 2: Roadmap 2022 ---
+    ## Scenario 2: 2022 Roadmap (Filtering Outliers)
+    ## [PT-BR] Cenário 2: Roadmap 2022 (Filtrando Outliers)
+
+    # Exclude 'Heron' as it represents a shift to quality over quantity, 
+    # which would skew the regression of the scaling trend.
+
     df_2022 = df[(df['Roadmap_Year'] == '2022') & (df['Label'] != 'Heron')]
     process_fit(df_2022, '2022', 'Main', '2022 Roadmap')
 
-    # --- SCENARIO 3: Roadmap 2025 (Split Trends) ---
+    ## Scenario 3: 2025 Roadmap (Divergent Trends)
+    ## [PT-BR] Cenário 3: Roadmap 2025 (Tendências Divergentes)
     target_year = '2025' 
     if target_year not in df['Roadmap_Year'].unique():
         target_year = df['Roadmap_Year'].max()
 
     if target_year in df['Roadmap_Year'].unique():
-        # Trend A: Old (Falcon -> Condor)
+        # Trend A: The "Legacy" scaling path (Falcon -> Condor)
+        # Excludes new architectures (Nighthawk) and modular chips (Heron)
+
         df_old = df[
             (df['Roadmap_Year'] == target_year) & 
             (df['Year'] <= 2023) & 
@@ -149,46 +180,58 @@ def calculate_regression_data(df):
         process_fit(df_new, target_year, 'New_Trend', '2025 Roadmap - Nighthawk')
 
     # Return only the lines dataframe (labels are now integrated as columns)
+    # Using concatenation handles empty lists gracefully
     return pd.concat(reg_lines) if reg_lines else pd.DataFrame(), None
 
+## Full Roadmap Evolution Plotting
+## [PT-BR] Plotagem da Evolução Completa dos Roadmaps
 def plot_roadmap_evolution(df, df_reg_lines, _ignored_labels):
     """
     [EN] Generates the chart with MANUAL COLORS for regressions.
     [PT-BR] Gera o gráfico com CORES MANUAIS para as regressões.
     """
     
+    ## Data Preparation for Plotting
+    ## [PT-BR] Preparação dos Dados para Plotagem
+    # Pre-formatting labels prevents clutter inside the plot definition
     df['Label_Full'] = df.apply(lambda row: f"{row['Label']}\n({int(row['Qubits'])})", axis=1)
 
-    # --- DEFINIÇÃO DE CORES MANUAIS ---
-    # Coloque aqui as cores hexadecimais que você quer.
-    # A ordem de atribuição geralmente é alfabética pelo nome da tendência:
-    # 1. Legacy... (Ex: Vermelho para força bruta antiga)
-    # 2. Trend 2020... (Ex: Azul padrão)
-    # 3. Trend 2022... (Ex: Roxo)
-    # 4. Utility... (Ex: Verde para a nova era sustentável)
+    # --- PALETTE CONFIGURATION / CONFIGURAÇÃO DA PALETA ---
+    # [EN] Manual hex codes assigned to specific trend lines
+    # [PT-BR] Códigos hex manuais atribuídos a linhas de tendência específicas
+
+    # 1. Legacy (Blue), 2. Trend 2020 (Red), 3. Trend 2022 (Purple), 4. Utility (Green)
+
     my_colors = ["#3498db", "#e74c3c", "#9b59b6", "#2ecc71"] 
 
     chart = (
         ggplot()
         
-        # --- LAYER 1: REGRESSION LINES ---
+        ## Layer 1: Regression Lines (Background)
+        ## [PT-BR] Camada 1: Linhas de Regressão (Fundo)
         + geom_line(data=df_reg_lines, 
                     mapping=aes(x='Year', y='Qubits', color='Legend_Label', group='Group_ID'),
                     linetype='dashed', size=1.2, alpha=0.8)
         
-        # --- LAYER 3: DATA POINTS ---
+        ## Layer 2: Data Points (Middle)
+        ## [PT-BR] Camada 2: Pontos de Dados (Meio)
         + geom_point(data=df, 
                      mapping=aes(x='Year', y='Qubits', shape='Status'), 
                      color="#2c3e50", fill="#2c3e50", size=3.5)
         
-        # --- LAYER 4: TEXT LABELS ---
+        ## Layer 3: Text Annotations (Foreground)
+        ## [PT-BR] Camada 3: Anotações de Texto (Frente)
         + geom_text(data=df,
                     mapping=aes(x='Year', y='Qubits', label='Label_Full'), 
                     nudge_y=0.25, size=9, color="#34495e", lineheight=0.9)
         
-        # --- SCALES ---
+        ## Structural Faceting
+        ## [PT-BR] Facetamento Estrutural
+        # 'scales=free_x' allows each panel to have its own year range
         + facet_wrap('~Roadmap_Year', ncol=3, scales='free_x')
         
+        ## Axis Scaling Configuration
+        ## [PT-BR] Configuração de Escala dos Eixos
         + scale_y_continuous(
             trans='log2', 
             breaks=[32, 128, 512, 1024, 4096, 8192, 16384], 
@@ -196,48 +239,54 @@ def plot_roadmap_evolution(df, df_reg_lines, _ignored_labels):
             name="Physical Qubits (Log Scale)"
         )
         
-        # --- SOLUÇÃO DE "ALMOFADA ASSIMÉTRICA" (Só na direita) ---
+        # [EN] Dynamic X-Axis Logic (Asymmetric Cushion)
+        # [PT-BR] Lógica Dinâmica do Eixo X (Almofada Assimétrica)
         + scale_x_continuous(
-            # 1. Breaks: Garante que os números no eixo sejam anos inteiros
-            # O 'int(limits[1]) + 1' garante que o último ano seja desenhado
+            # Lambda ensures breaks are always integers based on data limits
             breaks=lambda limits: range(int(limits[0]), int(limits[1]) + 1),
             
             name="Year",
             
-            # 2. Limits com Lógica Personalizada (A Mágica):
-            # Em vez de números fixos, usamos uma função lambda 'l'.
-            # l[0] é o ano mínimo dos dados daquele painel.
-            # l[1] é o ano máximo dos dados daquele painel.
-            # Retornamos (l[0], l[1] + 1.5) -> Começa igual, termina 1.5 anos depois.
+            # Lambda calculates dynamic limits: adds 1.5 years padding to the right for labels
             limits=lambda l: (l[0] - 0.9, l[1] + 0.9),
             
-            # 3. Zeramos o expand padrão para respeitar estritamente o cálculo acima
+            # Expand=0 forces strict adherence to the limits calculated above
             expand=(0, 0)
         )
         
-        # --- MUDANÇA AQUI: CORES MANUAIS ---
+        ## Legend & Color Mapping
+        ## [PT-BR] Mapeamento de Legenda e Cores
         + scale_color_manual(values=my_colors, name="Doubling Trends")
-        
         + scale_shape_manual(values={"Executed": "o", "Forecast": "^"}, name="Project Status")
         
+        ## Theme & Design System
+        ## [PT-BR] Tema e Sistema de Design
         + theme_bw()
         + theme(
             figure_size=(16, 7),
-            #text=element_text(family="sans-serif"),
-            axis_text_x=element_text(rotation=45, hjust=1, size=12),
-            strip_background=element_rect(fill="#f0f2f5"), 
-            strip_text=element_text(weight='bold', size=11),
-            panel_grid_minor=element_blank(),
-            legend_position="right", # Legenda na direita
-            legend_key=element_blank(),
-            legend_title=element_text(weight='bold'),
             text=element_text(family="Open Sans Semicondensed"),
-            # 1. Título Principal (Aumentei para 22 e deixei negrito)
+
+            # Grid & Backgrounds
+            panel_grid_minor=element_blank(),
+            plot_background=element_rect(fill='None', color='None'),  # Remove fundo da imagem total
+            panel_background=element_rect(fill='None', color='None'), # Remove fundo da área do gráfico
+            strip_background=element_rect(fill="#f0f2f5"), 
+
+            # Typography Hierarchy
+            axis_text_x=element_text(rotation=45, hjust=1, size=12),
+             # Título Principal 
             plot_title=element_text(size=18, weight='bold'),
-            # 2. Títulos dos Eixos ("Year", "Qubits") (Aumentei para 16)
+            # Títulos dos Eixos ("Year", "Qubits") 
             axis_title=element_text(size=16),
-            # 3. Textos dos Eixos (Os números/anos) (Aumentei para 12)
-            axis_text_y=element_text(size=12)
+            # Textos dos Eixos (Os números/anos) 
+            axis_text_y=element_text(size=12),
+            strip_text=element_text(weight='bold', size=11),
+
+            # Legend Styling
+            legend_position="right", # Legenda na direita
+            legend_background=element_rect(fill='None'),
+            legend_key=element_blank(),
+            legend_title=element_text(weight='bold')
         )
         + labs(title="Quantum Supply Scaling: The Trajectory of Qubit Volume (IBM Roadmaps)")
     )
@@ -246,48 +295,57 @@ def plot_roadmap_evolution(df, df_reg_lines, _ignored_labels):
 
 def plot_standalone_2022(df, df_reg_lines):
     """
-    [EN] Standalone chart for 2022 with LEGEND ON THE RIGHT.
-    [PT-BR] Gráfico independente para 2022 com LEGENDA NA DIREITA.
+    [EN] Standalone chart for 2022 with legend on the right.
+    [PT-BR] Gráfico independente para 2022 com legenda na direita.
     """
     
+    ## Data Isolation and Preparation
+    ## [PT-BR] Isolamento e Preparação dos Dados
+    # Using .copy() is essential to avoid SettingWithCopy warnings when modifying df later
+
     df_2022 = df[df['Roadmap_Year'] == '2022'].copy()
     reg_2022 = df_reg_lines[df_reg_lines['Roadmap_Year'] == '2022'].copy()
     
+    # Pre-formatting the label with newline characters for vertical stacking
     df_2022['Label_Full'] = df_2022.apply(lambda row: f"{row['Label']}\n({int(row['Qubits'])})", axis=1)
 
-    # --- MUDANÇA DE COR AQUI ---
-    # Coloque o código Hexadecimal da cor que você deseja.
-    # Exemplos:
-    # Vermelho: "#e74c3c"
-    # Roxo:     "#8e44ad"
-    # Laranja:  "#e67e22"
-    # Azul IBM: "#3498db"
+    # --- VISUAL CONFIGURATION / CONFIGURAÇÃO VISUAL ---
+    # [EN] Single color for the trend line (Red for high visibility)
+    # [PT-BR] Cor única para a linha de tendência (Vermelho para alta visibilidade)
+    my_single_color = ["#e74c3c"] # <--- trocar código pela cor desejada
     
-    my_single_color = ["#e74c3c"] # <--- TROQUE ESSE CÓDIGO PELA COR DESEJADA
-
-    # 2. CÁLCULO DE LIMITE SEGURO (Para evitar sobreposição)
-    # Pegamos o menor ano (2019) e o maior ano (2025)
-    # Adicionamos +1.5 ao final para criar uma "almofada" de espaço para o texto
+    # [EN] Dynamic Padding Calculation for X-Axis
+    # [PT-BR] Cálculo Dinâmico de Espaçamento (Padding) para o Eixo X
+    # We explicitly calculate limits to ensure text labels fit within the plot area.
     min_year = int(df_2022['Year'].min())
     max_year = int(df_2022['Year'].max())
     
+    # Adding 0.5 padding on both sides creates a balanced "cushion"
     limit_min = min_year - 0.5
     limit_max = max_year + 0.5
 
     chart = (
         ggplot()
+        ## Layer 1: Trend Line
+        ## [PT-BR] Camada 1: Linha de Tendência
         + geom_line(data=reg_2022, 
                     mapping=aes(x='Year', y='Qubits', color='Legend_Label', group='Group_ID'),
                     linetype='dashed', size=1.2, alpha=0.8)
-        
+
+        ## Layer 2: Data Points
+        ## [PT-BR] Camada 2: Pontos de Dados
         + geom_point(data=df_2022, 
                      mapping=aes(x='Year', y='Qubits', shape='Status'), 
                      color="#2c3e50", fill="#2c3e50", size=4)
         
+        ## Layer 3: Text Labels
+        ## [PT-BR] Camada 3: Rótulos de Texto
         + geom_text(data=df_2022,
                     mapping=aes(x='Year', y='Qubits', label='Label_Full'), 
                     nudge_y=0.25, size=9, color="#34495e", lineheight=0.9)
         
+        ## Axis Scales
+        ## [PT-BR] Escalas dos Eixos
         + scale_y_continuous(
             trans='log2', 
             breaks=[32, 128, 512, 1024, 4096], 
@@ -296,40 +354,40 @@ def plot_standalone_2022(df, df_reg_lines):
         )
         
         + scale_x_continuous(
-            # Definimos os limites explicitamente usando as variáveis calculadas acima.
-            # O gráfico vai desenhar a grade até 2026.5, acomodando o texto.
+            # Using the pre-calculated limits creates a stable viewport
             limits=[limit_min, limit_max],
             breaks=range(min_year, max_year + 2), 
             name="Year"
         )
         
-        # Aqui ele aplica a cor que você definiu acima
+        ## Legend Configuration
+        ## [PT-BR] Configuração da Legenda
         + scale_color_manual(values=my_single_color, name="Doubling Trend")
-        
         + scale_shape_manual(values={"Executed": "o", "Forecast": "^"}, name="Project Status")
         
+        ## Theme & Design System
+        ## [PT-BR] Tema e Sistema de Design
         + theme_bw()
         + theme(
             figure_size=(16, 7),
             text=element_text(family="Open Sans Semicondensed"),
-            axis_text_x=element_text(rotation=45, hjust=1, size=12),
-            panel_grid_minor=element_blank(),
+
+            # Layout & Alignment
             legend_position="right", 
+            axis_text_x=element_text(rotation=45, hjust=1, size=12),
+
+            # Typography
+            plot_title=element_text(size=18, weight='bold', ha='center'),
+            plot_subtitle=element_text(size=14, ha='center', margin={'b': 15}),
+            axis_title=element_text(size=16),
+            axis_text_y=element_text(size=12),
             legend_title=element_text(weight='bold'),
 
-            # 1. Título Principal (Aumentei para 22 e deixei negrito)
-            # --- TÍTULO PRINCIPAL ---
-            plot_title=element_text(size=18, weight='bold', ha='center'),
-            
-            # --- SUBTÍTULO (NOVO) ---
-            # Um pouco menor (size=14) e normal (sem negrito), centralizado
-            plot_subtitle=element_text(size=14, ha='center', margin={'b': 15}),
-            
-            # 2. Títulos dos Eixos ("Year", "Qubits") (Aumentei para 16)
-            axis_title=element_text(size=16),
-            
-            # 3. Textos dos Eixos (Os números/anos) (Aumentei para 12)
-            axis_text_y=element_text(size=12)
+            # Backgrounds & Grids (Transparency)
+            panel_grid_minor=element_blank(),
+            legend_background=element_rect(fill='None'),
+            plot_background=element_rect(fill='None', color='None'),  # Remove fundo da imagem total
+            panel_background=element_rect(fill='None', color='None') # Remove fundo da área do gráfico
         )
         + labs(
             title="Quantum Supply Scaling",
@@ -339,21 +397,155 @@ def plot_standalone_2022(df, df_reg_lines):
     
     return chart
 
+## Graphical Abstract Generation (High Contrast/Thumbnail)
+## [PT-BR] Geração do Resumo Gráfico (Alto Contraste/Miniatura)
+def plot_graphical_abstract(df, df_reg_lines):
+
+    """
+    [EN] Graphical Abstract - Adjusted Layout.
+         - Colors: Purple Circles (Executed) vs Pink Triangles (Forecast).
+    """
+    
+    ## Data Preparation & Filtering
+    ## [PT-BR] Preparação e Filtragem de Dados
+    # We create copies to ensure we are working with a distinct slice of memory
+    df_2022 = df[df['Roadmap_Year'] == '2022'].copy()
+    reg_2022 = df_reg_lines[df_reg_lines['Roadmap_Year'] == '2022'].copy()
+    
+    # --- VISUAL CONSTANTS / CONSTANTES VISUAIS ---
+    abstract_color = "#aa0069" 
+    
+    # [EN] Mapping dictionaries for specific visual encoding
+    # [PT-BR] Dicionários de mapeamento para codificação visual específica    
+    point_colors = {
+        "Executed": "#8e44ad", # Roxo
+        "Forecast": "#ff79cb"  # Rosa
+    }
+    
+    point_shapes = {
+        "Executed": "o", 
+        "Forecast": "^"
+    }
+    
+    # Text annotation content
+    reg_text = "Doubling Rate:\n~10 Months"
+
+    chart = (
+        ggplot()
+
+        ## Layer 1: Trend Line (Thick & Dashed)
+        ## [PT-BR] Camada 1: Linha de Tendência (Grossa e Tracejada)
+        + geom_line(data=reg_2022, 
+                    mapping=aes(x='Year', y='Qubits', group='Group_ID'),
+                    color=abstract_color,
+                    linetype='dashed', size=2.5, alpha=0.9)
+
+        ## Layer 2: Data Points (The Focus)
+        ## [PT-BR] Camada 2: Pontos de Dados (O Foco)
+        # Critical Design Choice: 
+        # We use 'fill' inside AES for data coding (Pink/Purple).
+        # We use 'color' outside AES for a static dark border (#2c3e50).
+        + geom_point(data=df_2022, 
+                     mapping=aes(x='Year', y='Qubits', 
+                                 shape='Status', 
+                                 fill='Status'), # Preenchimento mapeado
+                     color="#2c3e50",            # Borda fixa escura (para contraste)
+                     stroke=1.5,                 # Borda grossa
+                     size=9)
+        
+        ## Layer 3: Manual Annotation
+        ## [PT-BR] Camada 3: Anotação Manual
+        # Positioned manually (x=2021, y=300) to sit cleanly in empty space
+        + annotate("text", x=2021, y=300, 
+                   label=reg_text, color=abstract_color, 
+                   size=16, 
+                   fontweight="bold", 
+                   ha='center')
+        
+        ## Scales (Logarithmic & Manual Mappings)
+        ## [PT-BR] Escalas (Logarítmicas e Mapeamentos Manuais)
+        + scale_y_continuous(
+            trans='log2', 
+            breaks=[32, 128, 512, 1024, 4096, 16384], 
+            labels=["32", "128", "512", "1k", "4k", "16k"], 
+            name="Physical Qubits"
+        )
+        
+        + scale_x_continuous(
+            breaks=range(2019, 2027,2), 
+            name="Year"
+        )
+        
+        # Mapeia as formas (Círculo e Triângulo)
+        + scale_shape_manual(values=point_shapes, name="Project Status")
+        # Mapeia as cores (Roxo e Rosa)
+        + scale_fill_manual(values=point_colors, name="Project Status")
+        
+       ## Theme: High Contrast / Large Fonts
+        ## [PT-BR] Tema: Alto Contraste / Fontes Grandes
+        + theme_bw()
+        + theme(
+            figure_size=(8, 8),
+            text=element_text(family="Open Sans Semicondensed"),
+
+            # Removal of backgrounds for transparency            
+            plot_background=element_rect(fill='None', color='None'),
+            panel_background=element_rect(fill='None', color='None'),
+            legend_background=element_rect(fill='None', color='None'),
+            
+            # Title Hierarchy (Bold and Large)
+            plot_title=element_text(size=32, weight='bold', ha='center'),
+            plot_subtitle=element_text(size=24, ha='center', margin={'b': 20}),
+            
+            # Axis Typography
+            axis_title=element_text(size=24, weight='bold'),
+            axis_text=element_text(size=20,color="black"),
+            
+            # Legend Positioning (Inside Plot, Top-Left)
+            legend_justification=('left', 'top'),
+            legend_position=(0.075, 0.92),
+            legend_title=element_text(size=16, weight='bold'),
+            legend_text=element_text(size=16),
+            legend_key=element_blank(),
+
+            # Borders and Grids
+            panel_border=element_rect(color="black", size=1.5),
+            axis_ticks=element_line(size=2, color="black"),
+            panel_grid_major=element_line(size=1.2, color="#a2a2a2"), 
+        )
+        + labs(
+            title="Quantum Moore's Law",
+            subtitle="Supply Scaling (IBM Roadmap)"
+        )
+    )
+    
+    return chart
+
+## Main Execution Logic
+## [PT-BR] Lógica Principal de Execução
 if __name__ == "__main__":
     print("Loading data... / Carregando dados...")
+
+    # 1. ETL Pipeline Trigger
     df = load_and_clean_data()
     
+    # Safety check: prevent execution if data loading failed
     if df is not None:
         print("Calculating regressions... / Calculando regressões...")
+        # Calculate trends once, reuse for all charts
+        # Returns tuple: (lines_dataframe, ignored_labels)
         df_lines, df_labels = calculate_regression_data(df)
         
-        # 1. GENERATE THE FULL 3-PANEL CHART (Original)
+        # --- OUTPUT 1: FULL COMPARISON CHART ---        
         print("\nGenerating full comparison chart... / Gerando gráfico completo...")
         plot_full = plot_roadmap_evolution(df, df_lines, None)
-        plot_full.save(os.path.join(FIGURES_PATH, "roadmap_evolution_full.png"), width=16, height=7, dpi=300)
-        plot_full.save(os.path.join(FIGURES_PATH, "roadmap_evolution_full.pdf"), width=16, height=7)
+
+        # Standard academic width (16x7) for broad landscape views
+        # Transparent background allows flexible placement in layouts
+        plot_full.save(os.path.join(FIGURES_PATH, "roadmap_evolution_full.png"), width=16, height=7, dpi=300,transparent=True)
+        plot_full.save(os.path.join(FIGURES_PATH, "roadmap_evolution_full.pdf"), width=16, height=7,dpi=300,transparent=True)
         
-        # 2. GENERATE THE 2022 STANDALONE CHART (New)
+        # --- OUTPUT 2: 2022 STANDALONE DETAIL ---
         print("Generating 2022 standalone chart... / Gerando gráfico 2022 isolado...")
         plot_2022 = plot_standalone_2022(df, df_lines)
         
@@ -361,7 +553,19 @@ if __name__ == "__main__":
         file_2022_png = os.path.join(FIGURES_PATH, "roadmap_2022_detail.png")
         file_2022_pdf = os.path.join(FIGURES_PATH, "roadmap_2022_detail.pdf")
         
-        plot_2022.save(file_2022_png, width=10, height=7, dpi=300)
-        plot_2022.save(file_2022_pdf, width=10, height=7)
+        # Reduced width (10x7) keeps focus tight on the single timeline
+        plot_2022.save(file_2022_png, width=10, height=7, dpi=300,transparent=True)
+        plot_2022.save(file_2022_pdf, width=10, height=7,dpi=300,transparent=True)
+
+        # --- OUTPUT 3: GRAPHICAL ABSTRACT ---
+        print("Generating Graphical Abstract...")
+        plot_abstract = plot_graphical_abstract(df, df_lines)
+        
+        file_abstract_png = os.path.join(FIGURES_PATH, "roadmap_2022_graphical_abstract.png")
+        file_abstract_pdf = os.path.join(FIGURES_PATH, "roadmap_2022_graphical_abstract.pdf")
+        
+        # Near-square aspect ratio (8x9) is standard for thumbnails/sidebars
+        plot_abstract.save(file_abstract_png, width=8, height=9, dpi=300, transparent=True)
+        plot_abstract.save(file_abstract_pdf, width=8, height=9, transparent=True)
         
         print(f"Done! Saved:\n - {file_2022_png}")
