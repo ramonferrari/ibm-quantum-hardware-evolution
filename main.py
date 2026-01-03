@@ -247,10 +247,10 @@ def main():
 
 
     print("[EN]")
-    print(f"\n[SUCCESS] Dataset saved to: {os.path.abspath(filename)}")
+    print(f"[SUCCESS] Dataset saved to: {os.path.abspath(filename)}")
     print(f"Total number of qubits processed: {len(all_data_rows)}")
     print("[PT-BR]")
-    print(f"\n[SUCESSO] Dataset salvo em: {os.path.abspath(filename)}")
+    print(f"[SUCESSO] Dataset salvo em: {os.path.abspath(filename)}")
     print(f"Total de Qubits processados: {len(all_data_rows)}")
 
 if __name__ == "__main__":

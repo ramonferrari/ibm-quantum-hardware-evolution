@@ -1,5 +1,5 @@
 "Technology","Year (Roadmap)","Year","Developer","Label","Qubit counts","Expected Qubit Counts","Quantum Volume","Quantum Volume Reality","CLOPS"
-"Quantum Computing",2020,2019,"IBM","Falcon",27,"Executed",64,"Forecast"
+"Quantum Computing",2020,2019,"IBM","Falcon",27,"Executed",64,"Forecast",200
 "Quantum Computing",2020,2020,"IBM","Hummingbird",65,"Executed",
 "Quantum Computing",2020,2021,"IBM","Eagle",127,"Forecast",
 "Quantum Computing",2020,2022,"IBM","Osprey",433,"Forecast"
@@ -11,7 +11,7 @@
 "Quantum Computing",2022,2023,"IBM","Condor",1121,"Forecast",
 "Quantum Computing",2022,2023,"IBM","Heron",133,"Forecast",
 "Quantum Computing",2022,2024,"IBM","Flamingo (3x)",1386,"Forecast",
-"Quantum Computing",2022,2025,"IBM","Kookaburra (3x)",4158,"Forecast",
+"Quantum Computing",2022,2025,"IBM","Kookaburra (3x) ",4158,"Forecast",
 "Quantum Computing",2025,2019,"IBM","Falcon",27,"Executed",64
 "Quantum Computing",2025,2020,"IBM","Hummingbird",65,"Executed",
 "Quantum Computing",2025,2021,"IBM","Eagle",127,"Executed",

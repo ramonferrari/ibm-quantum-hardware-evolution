@@ -116,12 +116,14 @@ contendo dados reais de calibração dos chips em datas específicas.
 
 [EN]
 1. Install dependencies (using `uv` or `pip` is recommended):
+  # Shell commands
    ```bash
    uv add numpy qiskit-ibm-runtime
    ```
 
 [PT-BR]
 1. Instale as dependências (recomendado usar `uv` or `pip`):
+  # Comando de shell
    ```bash
    uv add numpy qiskit-ibm-runtime
    ```
